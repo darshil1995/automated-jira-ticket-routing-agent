@@ -1,0 +1,6 @@
+agents/ — each agent (Triage, Resolution, QA) gets its own file. Keeps concerns separated and makes it easy to swap one agent without touching the others.
+utils/ — shared helpers like the mock JIRA writer and the knowledge base builder live here.
+tickets/ — mock JIRA output JSON files get saved here during local testing.
+sample_data/ — a few realistic alert strings you can use to test the pipeline.
+lambda_handler.py — the AWS Lambda entry point. Stays thin, just receives the event and calls the graph.
+graph.py — the LangGraph wiring that connects all three agents.
