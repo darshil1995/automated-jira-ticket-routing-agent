@@ -1,22 +1,13 @@
-# test_triage.py
-"""
-Quick local test for the Triage Agent.
-Run with: python test_triage.py
-No AWS or OpenAI credentials needed when MOCK_MODE=True.
-"""
+"""Quick sanity check for the Triage Agent in mock mode."""
 
 from agents.triage_agent import run_triage
 
-# Three different issue types to verify mock routing works
-test_issues = [
-    "Production database is throwing connection timeout errors since 2am",
-    "Users cannot log in — authentication service returning 401",
-    "Export CSV button on the dashboard is not responding",
-]
+# Simulate what LangGraph will pass as state
+test_state = {
+    "issue": "Production database is throwing connection timeout errors. Users cannot log in."
+}
 
-for issue in test_issues:
-    print(f"\nIssue: {issue}")
-    print("-" * 60)
-    result = run_triage(issue)
-    for key, value in result.items():
-        print(f"  {key}: {value}")
+result = run_triage(test_state)
+print("\n--- Triage Output ---")
+import json
+print(json.dumps(result, indent=2))
