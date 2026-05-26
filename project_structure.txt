@@ -4,3 +4,17 @@ tickets/ — mock JIRA output JSON files get saved here during local testing.
 sample_data/ — a few realistic alert strings you can use to test the pipeline.
 lambda_handler.py — the AWS Lambda entry point. Stays thin, just receives the event and calls the graph.
 graph.py — the LangGraph wiring that connects all three agents.
+
+
+Virtual environment — isolates this project's dependencies from everything else on your machine. Without it, installing faiss-cpu here could break another project that needs a different version.
+requirements.txt — when you deploy to Lambda or a colleague clones the repo, they run pip install -r requirements.txt and get the exact same versions you tested with. No surprises.
+.env + python-dotenv — keeps secrets out of your code. Locally it reads from the file; in Lambda you set the same variable names in the AWS console under "Environment variables" and load_dotenv() simply does nothing.
+config.py — one source of truth for all configuration. Every agent imports from config import LLM_MODEL rather than calling os.getenv() scattered across files. The _require() helper means the app fails loudly at startup with a clear message if a variable is missing, rather than silently failing mid-pipeline when an LLM call is attempted.
+MOCK_MODE — lets you run and test the entire pipeline for free during development. When it's True, agents return hardcoded realistic responses instead of calling OpenAI. You only flip it to False when you're ready to test with real LLM calls.
+
+
+@tool decorator — tells LangChain this function is callable by an LLM agent as a tool. When we connect this to LangGraph in a later step, the agent can decide to call it mid-reasoning rather than needing you to call it manually.
+MOCK_MODE branch — the very first thing run_triage checks. This means you can run the entire pipeline a hundred times while building it without touching your OpenAI balance.
+temperature=0 — classification tasks need consistency. The same issue should always get the same category. Temperature 0 removes randomness from the LLM output.
+Structured JSON prompt — instead of asking the LLM to "describe the issue", we tell it exactly what keys to return. This makes the output machine-readable and safe to pass into the next agent via LangGraph state.
+Module-level logger with __name__ — every log line from this file will say agents.triage_agent as its source. When you have three agents all writing to CloudWatch, this makes it immediately clear which agent produced which log line.
