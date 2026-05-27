@@ -168,6 +168,7 @@ class TriageAgent:
             "summary": "<one sentence description of the issue>",
             "log_summary": "<what the historical logs revealed>",
             "suggested_owner": "<team name>",
+            "recommended_action": "<escalate_to_oncall | assign_to_auth_team | assign_to_frontend_team | assign_to_on_call>",
             "confidence": "<high|medium|low>"
         }}
 
@@ -195,6 +196,7 @@ class TriageAgent:
             "summary": "Database connection timeout detected on production cluster",
             "log_summary": "3 similar incidents found. Avg resolution: 2.5h. Common cause: config drift after deployment.",
             "suggested_owner": "platform-engineering",
+            "recommended_action": "escalate_to_oncall",  # ← ADD THIS
             "confidence": "high"
         }
 

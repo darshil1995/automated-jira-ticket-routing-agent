@@ -18,3 +18,14 @@ MOCK_MODE branch — the very first thing run_triage checks. This means you can 
 temperature=0 — classification tasks need consistency. The same issue should always get the same category. Temperature 0 removes randomness from the LLM output.
 Structured JSON prompt — instead of asking the LLM to "describe the issue", we tell it exactly what keys to return. This makes the output machine-readable and safe to pass into the next agent via LangGraph state.
 Module-level logger with __name__ — every log line from this file will say agents.triage_agent as its source. When you have three agents all writing to CloudWatch, this makes it immediately clear which agent produced which log line.
+
+
+Triage OUTPUT              Resolution READS
+──────────────────         ────────────────────
+category           ──────► category
+priority           ──────► priority
+summary            ──────► (not used, informational)
+log_summary        ──────► log_summary
+suggested_owner    ──────► (not used, informational)
+recommended_action ──────► recommended_action   ← was broken
+confidence         ──────► (not used, informational)
