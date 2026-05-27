@@ -29,3 +29,9 @@ log_summary        ──────► log_summary
 suggested_owner    ──────► (not used, informational)
 recommended_action ──────► recommended_action   ← was broken
 confidence         ──────► (not used, informational)
+
+
+What the QA Agent adds
+Two-layer review — regex catches obvious violations (email addresses, AWS keys, internal IPs) for free before any LLM call. The LLM then handles nuanced cases regex can't — indirect PII, vendor name references, speculative language. In mock mode only the regex layer runs, keeping local testing completely free.
+Static override — if regex finds a violation but the LLM somehow approves the ticket anyway, the agent overrides the LLM's decision. Deterministic checks always win over probabilistic ones for compliance.
+Clean final output — the final_ticket field inside the QA result is what gets written to JIRA. If violations were found, it contains the sanitised version with [REDACTED-PII] placeholders. If clean, it's the original resolution unchanged.
