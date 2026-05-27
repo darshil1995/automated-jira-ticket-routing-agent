@@ -35,3 +35,9 @@ What the QA Agent adds
 Two-layer review — regex catches obvious violations (email addresses, AWS keys, internal IPs) for free before any LLM call. The LLM then handles nuanced cases regex can't — indirect PII, vendor name references, speculative language. In mock mode only the regex layer runs, keeping local testing completely free.
 Static override — if regex finds a violation but the LLM somehow approves the ticket anyway, the agent overrides the LLM's decision. Deterministic checks always win over probabilistic ones for compliance.
 Clean final output — the final_ticket field inside the QA result is what gets written to JIRA. If violations were found, it contains the sanitised version with [REDACTED-PII] placeholders. If clean, it's the original resolution unchanged.
+
+
+What this handler adds
+Two trigger types in one function. The _detect_event_type() function inspects the event shape and routes it correctly — an HTTP POST from API Gateway and an S3 file upload both end up calling run_pipeline() with an issue string. The pipeline has no idea which trigger fired.
+Three-tier error handling. ValueError means the caller sent bad input — return 400. RuntimeError means infrastructure failed — return 500. Anything else is unexpected — log the full traceback to CloudWatch and return 500. This distinction matters in production because it tells you whether to fix the caller or fix your code.
+Request ID tracing. Every log line includes the Lambda aws_request_id. In CloudWatch you can filter by this ID and see every log line for a single invocation — across all three agents — in one view.

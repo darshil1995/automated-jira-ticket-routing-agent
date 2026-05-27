@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5d88024a-19ce-48fa-ac02-f046611e5c71" name="Changes" comment="Added qa agent">
-      <change afterPath="$PROJECT_DIR$/.idea/automated-jira-ticket-routing-agent.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="5d88024a-19ce-48fa-ac02-f046611e5c71" name="Changes" comment="Added full pipeline">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lambda_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/lambda_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/project_structure.txt" beforeDir="false" afterPath="$PROJECT_DIR$/project_structure.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,6 +47,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.test_handler.executor": "Run",
+    "Python.test_pipeline.executor": "Run",
     "Python.test_qa.executor": "Run",
     "Python.test_resolution.executor": "Run",
     "Python.test_triage.executor": "Run",
@@ -64,7 +64,29 @@
       <recent name="D:\AI_Projects\automated-jira-ticket-routing-agent" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.test_pipeline">
+  <component name="RunManager" selected="Python.test_handler">
+    <configuration name="test_handler" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="automated-jira-ticket-routing-agent" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_handler.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="test_pipeline" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="automated-jira-ticket-routing-agent" />
       <option name="ENV_FILES" value="" />
@@ -155,6 +177,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test_handler" />
         <item itemvalue="Python.test_pipeline" />
         <item itemvalue="Python.test_qa" />
         <item itemvalue="Python.test_resolution" />
@@ -241,7 +264,23 @@
       <option name="project" value="LOCAL" />
       <updated>1779885195420</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Added full pipeline">
+      <option name="closed" value="true" />
+      <created>1779885457648</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1779885457650</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Added full pipeline">
+      <option name="closed" value="true" />
+      <created>1779885490957</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1779885490957</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -251,6 +290,7 @@
     <MESSAGE value="Updated triage Agent" />
     <MESSAGE value="Added resolution agent" />
     <MESSAGE value="Added qa agent" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added qa agent" />
+    <MESSAGE value="Added full pipeline" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added full pipeline" />
   </component>
 </project>
