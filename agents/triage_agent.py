@@ -1,5 +1,3 @@
-# agents/triage_agent.py
-
 """
 Triage Agent — Agent A in the JIRA Workflow Pipeline.
 
@@ -26,8 +24,6 @@ from langchain_openai import ChatOpenAI
 from langchain.tools import tool
 from config import OPENAI_API_KEY, LLM_MODEL, LLM_MAX_TOKENS, MOCK_MODE
 
-# Module-level logger — inherits level set in config.configure_logging()
-# Using __name__ means log lines show "agents.triage_agent" as the source
 logger = logging.getLogger(__name__)
 
 
