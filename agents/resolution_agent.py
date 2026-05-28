@@ -1,42 +1,3 @@
-"""
-Resolution Agent — Agent B in the JIRA Workflow Pipeline.
-
-Responsibilities:
-    1. Receive the structured triage output from Agent A
-    2. Search the internal RAG knowledge base for relevant runbooks
-    3. Use retrieved runbooks as grounded context for the LLM
-    4. Generate a structured resolution — a draft JIRA ticket with
-       a concrete fix, affected systems, and escalation path
-
-Why RAG instead of pure LLM generation?
-    Without RAG, the LLM generates fixes from training data alone.
-    It may hallucinate commands, reference systems that don't exist
-    in your infrastructure, or suggest outdated procedures.
-
-    With RAG, the LLM is given your actual internal runbooks as context
-    before generating. Its output is grounded in verified, organisation-
-    specific knowledge — making it far more actionable and trustworthy.
-
-Typical input (from triage state):
-    {
-        "category": "infrastructure",
-        "priority": "P1",
-        "log_summary": "3 similar incidents. Root cause: connection pool exhaustion.",
-        "confidence": "high",
-        "recommended_action": "escalate_to_oncall"
-    }
-
-Typical output:
-    {
-        "ticket_title": "P1 Infrastructure: DB connection pool exhaustion on prod",
-        "ticket_description": "...",
-        "resolution_steps": [...],
-        "affected_systems": [...],
-        "escalation_path": "...",
-        "estimated_resolution_time": "1.5 hours"
-    }
-"""
-
 import json
 import logging
 from typing import Any
@@ -48,28 +9,10 @@ import config
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Mock Response
-# ---------------------------------------------------------------------------
-
 def _mock_resolution_response(triage: dict[str, Any]) -> dict[str, Any]:
-    """
-    Returns a hardcoded resolution without calling OpenAI or the vector store.
-
-    Mirrors the real output structure so the QA Agent downstream
-    behaves identically in mock and production modes.
-
-    Args:
-        triage: The triage output dict from Agent A.
-
-    Returns:
-        A realistic mock resolution dict.
-    """
-    logger.info("MOCK_MODE active — returning mock resolution response")
-
+    logger.info("ResolutionAgent running in MOCK_MODE — skipping LLM and KB calls")
     category = triage.get("category", "general")
     priority = triage.get("priority", "P2")
-
     return {
         "ticket_title": f"{priority} {category.title()}: Issue detected on production",
         "ticket_description": (
@@ -91,71 +34,31 @@ def _mock_resolution_response(triage: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------------------
-# Resolution Agent Class
-# ---------------------------------------------------------------------------
-
 class ResolutionAgent:
-    """
-    Generates structured JIRA ticket resolutions using RAG.
-
-    Combines semantic search over internal runbooks with LLM generation
-    to produce grounded, actionable resolution drafts. The resolution
-    is passed to the QA Agent for privacy and policy review before
-    being finalised.
-
-    Attributes:
-        knowledge_base (KnowledgeBase): The FAISS-backed runbook search index.
-        llm (ChatOpenAI): The LLM used to generate the resolution draft.
-        mock_mode (bool): When True, skips all external calls.
-    """
+    """Generates a structured JIRA ticket draft using RAG over internal runbooks."""
 
     def __init__(self):
-        """
-        Initialises the Resolution Agent and builds the knowledge base index.
-
-        The knowledge base is built at init time so the FAISS index is
-        ready before the first invocation. In a Lambda warm start scenario,
-        this runs once and is reused across subsequent invocations.
-        """
         logger.info(
             "Initialising ResolutionAgent | model=%s | mock=%s",
             config.LLM_MODEL, config.MOCK_MODE
         )
-
         self.mock_mode = config.MOCK_MODE
         self.knowledge_base = KnowledgeBase()
 
-        # Only build the vector index if we're in production mode
-        # Avoids unnecessary OpenAI embedding API calls during local testing
+        # Skip embedding API calls during local testing — KB is only needed in production
         if not self.mock_mode:
             self.knowledge_base.build()
 
+        # temperature=0.2 allows natural language variation in ticket descriptions
+        # while keeping structured fields (priority, steps) deterministic
         self.llm = ChatOpenAI(
             model=config.LLM_MODEL,
             max_tokens=config.LLM_MAX_TOKENS,
-            temperature=0.2,    # Slightly above zero to allow natural language
-                                # variation in ticket descriptions while keeping
-                                # the structured content deterministic
+            temperature=0.2,
             api_key=config.OPENAI_API_KEY,
         )
 
     def _build_prompt(self, triage: dict, retrieved_docs: list) -> str:
-        """
-        Constructs the resolution prompt with retrieved runbook context.
-
-        The retrieved documents are injected between the triage context
-        and the output instructions — this is the core RAG pattern.
-        The LLM sees real runbook content before generating its response.
-
-        Args:
-            triage: Structured triage output from Agent A.
-            retrieved_docs: Relevant runbook documents from FAISS search.
-
-        Returns:
-            Fully formatted prompt string ready to send to the LLM.
-        """
-        # Format retrieved runbooks as readable context blocks
         runbook_context = "\n\n---\n\n".join([
             f"Source: {doc.metadata.get('source', 'unknown')}\n{doc.page_content}"
             for doc in retrieved_docs
@@ -193,48 +96,25 @@ class ResolutionAgent:
 
     def run(self, triage: dict[str, Any]) -> dict[str, Any]:
         """
-        Main entry point for the Resolution Agent.
-
-        Orchestrates the full RAG resolution flow:
-            1. Short-circuit to mock if MOCK_MODE is True
-            2. Build a search query from the triage output
-            3. Retrieve relevant runbooks from the FAISS index
-            4. Inject runbooks into the LLM prompt
-            5. Parse the structured JSON response
-            6. Return for QA Agent review
-
-        Args:
-            triage: Structured output from the Triage Agent containing
-                    category, priority, log_summary, and recommended_action.
-
-        Returns:
-            Dict with ticket_title, ticket_description, resolution_steps,
-            affected_systems, escalation_path, estimated_resolution_time,
-            and runbooks_referenced.
+        Retrieves relevant runbooks and generates a structured ticket draft.
 
         Raises:
             ValueError: If the LLM returns malformed JSON.
         """
         logger.info(
-            "ResolutionAgent.run() called | category=%s | priority=%s",
+            "ResolutionAgent.run() | category=%s | priority=%s",
             triage.get("category"), triage.get("priority")
         )
 
-        # --- MOCK MODE ---
         if self.mock_mode:
             return _mock_resolution_response(triage)
 
-        # --- PRODUCTION MODE ---
-
-        # Step 1: Build search query from triage context
-        # Combining category and log summary gives the best semantic match
         search_query = (
             f"{triage.get('category', '')} "
             f"{triage.get('log_summary', '')} "
             f"{triage.get('recommended_action', '')}"
         )
 
-        # Step 2: Retrieve relevant runbooks via FAISS similarity search
         retrieved_docs = self.knowledge_base.search(query=search_query, top_k=2)
         logger.info(
             "Runbooks retrieved | count=%d | sources=%s",
@@ -242,64 +122,34 @@ class ResolutionAgent:
             [d.metadata.get("source") for d in retrieved_docs]
         )
 
-        # Step 3: Build prompt with runbook context injected
         prompt = self._build_prompt(triage=triage, retrieved_docs=retrieved_docs)
 
-        # Step 4: Call LLM
-        logger.info("Calling LLM for resolution generation | model=%s", config.LLM_MODEL)
+        logger.info("Calling LLM | model=%s", config.LLM_MODEL)
         response = self.llm.invoke(prompt)
         raw_content = response.content.strip()
-        logger.debug("Raw LLM response | content='%s'", raw_content[:200])
 
-        # Step 5: Parse JSON response
         try:
             result = json.loads(raw_content)
         except json.JSONDecodeError as e:
-            logger.error(
-                "Resolution LLM returned invalid JSON | error=%s | raw='%s'",
-                str(e), raw_content[:300]
-            )
-            raise ValueError(
-                f"Resolution Agent received non-JSON response: {raw_content[:200]}"
-            ) from e
+            logger.error("Resolution LLM returned invalid JSON | error=%s | raw='%s'", str(e), raw_content[:300])
+            raise ValueError(f"ResolutionAgent received non-JSON response: {raw_content[:200]}") from e
 
         logger.info(
             "Resolution complete | title='%s' | steps=%d",
             result.get("ticket_title", "")[:60],
             len(result.get("resolution_steps", []))
         )
-
         return result
 
 
-# ---------------------------------------------------------------------------
-# Module-level singleton + LangGraph node function
-# ---------------------------------------------------------------------------
-
-# Single instance reused across Lambda warm starts
+# Singleton — reused across Lambda warm starts to avoid re-initialising the LLM client and KB
 resolution_agent = ResolutionAgent()
 
 
 def run_resolution(state: dict) -> dict:
-    """
-    LangGraph node function for the Resolution Agent.
-
-    Reads the triage output from shared graph state,
-    runs the resolution pipeline, and writes the result
-    back into state for the QA Agent to consume.
-
-    Args:
-        state: LangGraph shared state. Must contain "triage" key.
-
-    Returns:
-        Dict fragment with "resolution" key to merge into graph state.
-    """
-    logger.info("LangGraph node: resolution | state_keys=%s", list(state.keys()))
-
+    """LangGraph node — reads 'triage' from state, writes 'resolution' back."""
+    logger.info("Node: resolution | state_keys=%s", list(state.keys()))
     triage = state.get("triage", {})
-
     if not triage:
         logger.warning("Resolution node received empty triage state")
-
-    resolution_result = resolution_agent.run(triage)
-    return {"resolution": resolution_result}
+    return {"resolution": resolution_agent.run(triage)}

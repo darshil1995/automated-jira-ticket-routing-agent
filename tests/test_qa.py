@@ -1,4 +1,3 @@
-# test_qa.py
 
 """
 End-to-end sanity check for the full three-agent pipeline in mock mode.
